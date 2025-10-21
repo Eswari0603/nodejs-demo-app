@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline - node.js + EC2
 
 on:
   push:
@@ -42,3 +42,15 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/nodejs-demo-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/nodejs-demo-app:latest
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/nodejs-demo-app:latest
+            docker stop nodejs-demo-app || true
+            docker rm nodejs-demo-app || true
+            docker run -d -p 3000:3000 --name nodejs-demo-app ${{ secrets.DOCKER_USERNAME }}/nodejs-demo-app:latest
